@@ -1,0 +1,99 @@
+Modelo de Atribución: Last UTM Click — Session Scoped
+┌──────────────────────────────────────────────────────┐
+│  TIPO: Last Click — UTM Based — Session Scoped       │
+│                                                      │
+│  Ventana de atribución: duración del localStorage    │
+│  (persiste hasta que el usuario compra o cierra      │
+│   el navegador en modo incógnito)                    │
+│                                                      │
+│  Señal de atribución: keyword en cualquier UTM       │
+│  Keywords activas: hotsale · hot_sale · hot-sale     │
+│                    ccce                              │
+│                                                      │
+│  Campo de crédito: último clic que trajo al usuario  │
+│  al ally store con UTM de Hotsale                    │
+└──────────────────────────────────────────────────────┘
+
+FLUJO:
+┌─────────────────────────────────────────────────────────────────┐
+│                    FUENTES DE TRÁFICO                           │
+│         Meta Ads · Google Ads · Email · Orgánico               │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │ UTM parameters
+                       ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   HOTSALE.COM.CO                                │
+│              (punto de entrada del evento)                      │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │ redirect con UTMs preservados
+                       ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    ALLY STORE                                   │
+│         nike.com.co · falabella.com · alkosto.com · etc        │
+│                                                                 │
+│   TAG 1 — theme.liquid / GTM All Pages                         │
+│   ┌─────────────────────────────────────────────────────┐      │
+│   │ Detecta UTM con keyword Hotsale                     │      │
+│   │ Guarda en localStorage:                             │      │
+│   │   utm_source · utm_medium · utm_campaign            │      │
+│   │   store_domain · landed_at                          │      │
+│   └─────────────────────────────────────────────────────┘      │
+│                       │                                         │
+│                       │ usuario navega y compra                 │
+│                       ▼                                         │
+│   TAG 2 — Customer Events / GTM Thank You Page                 │
+│   ┌─────────────────────────────────────────────────────┐      │
+│   │ Lee localStorage → valida keyword                   │      │
+│   │ Toma order_id · order_value · currency              │      │
+│   │ Fallback → event.context si localStorage vacío      │      │
+│   └─────────────────────────────────────────────────────┘      │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │ conversión confirmada
+                       ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  TRES DESTINOS EN PARALELO                      │
+│                                                                 │
+│  ┌─────────────────┐ ┌──────────────┐ ┌─────────────────────┐  │
+│  │  Google Sheet   │ │     GA4      │ │     Meta Pixel      │  │
+│  │  (Apps Script)  │ │  (Hotsale)   │ │     (Hotsale)       │  │
+│  │                 │ │              │ │                     │  │
+│  │ • Fecha         │ │ • purchase   │ │ • Purchase event    │  │
+│  │ • store_domain  │ │ • order_id   │ │ • value             │  │
+│  │ • utm_source    │ │ • value      │ │ • currency          │  │
+│  │ • utm_medium    │ │ • currency   │ │ • store_domain      │  │
+│  │ • utm_campaign  │ │ • utm_source │ │ • utm_source        │  │
+│  │ • order_id      │ │ • utm_medium │ │ • utm_campaign      │  │
+│  │ • order_value   │ │ • campaign   │ │                     │  │
+│  │ • currency      │ │ • domain     │ │                     │  │
+│  └────────┬────────┘ └──────┬───────┘ └──────────┬──────────┘  │
+└───────────┼─────────────────┼────────────────────┼─────────────┘
+            │                 │                    │
+            ▼                 ▼                    ▼
+     Siempre llega      Llega si GA4         Llega si Meta
+     sin depender       no está              no está
+     de nada externo    bloqueado            bloqueado
+     (zero infra)
+
+
+LIMITACIONES:
+✅ CAPTURA
+   Usuario llega con UTM Hotsale → compra en la misma sesión
+   Usuario llega → navega varias páginas → compra (misma sesión)
+   Usuario llega por Meta Ad con UTM → compra (mismo dispositivo)
+
+⚠️  CAPTURA PARCIALMENTE
+   Usuario llega → cierra → vuelve días después
+   (localStorage persiste pero sessionStorage no)
+
+❌ NO CAPTURA
+   Cross-device (ve en móvil, compra en desktop)
+   Safari ITP agresivo (borra localStorage en 7 días)
+   Checkout en subdominio sin acceso a localStorage del main domain
+   Plataformas con WAF que bloquean el fetch al Apps Script
+
+
+Jerarquía de Confiabilidad por Destino
+SHEET (Apps Script)     ████████████████████  ~85% de conversiones reales
+GA4                     ███████████████░░░░░  ~75% (bloqueado en algunos enterprise)
+Meta Pixel              ████████████░░░░░░░░  ~60% (ad blockers + CSP + iOS)
+Cupón (offline)         ████████████████████  100% — no depende de código
