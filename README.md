@@ -40,16 +40,6 @@ var keywords = ['hotsale', 'hot_sale', 'hot-sale', 'ccce'];
 
 Cualquier UTM que contenga alguna de estas keywords activa el pixel.
 
-## Variables a reemplazar
-
-Antes de instalar, reemplazar en todos los archivos:
-
-| Variable | Valor |
-|---|---|
-| `G-XXXXXXXXXX` | GA4 Measurement ID de Hotsale |
-| `XXXXXXXXXXXXXXXXX` | Meta Pixel ID de Hotsale |
-| `YOUR_SCRIPT_ID` | ID del Apps Script web app |
-
 ## Contacto técnico
 
-Dudas de implementación: [email]
+Dudas de implementación: sergio@upsellmarketing.co
