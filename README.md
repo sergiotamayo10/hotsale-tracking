@@ -1,5 +1,4 @@
 # Hotsale Tracking Pixel — hotsale.com.co
-Aquí estará la información necesaria para instalar los pixeles que van a permitir medir el impacto en ROI de eventos de la CCCE para múltiples plataformas.
 
 Sistema de tracking de conversiones cross-domain para el evento Hotsale Colombia.
 Captura compras realizadas en sitios de aliados atribuidas a tráfico de Hotsale.
