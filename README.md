@@ -25,7 +25,7 @@ Campaña Hotsale → Usuario llega al aliado con UTM
 
 ## Instalación por plataforma
 
-| Plataforma | Tag 1 | Tag 2 |
+| Plataforma | Place | Tag |
 |---|---|---|
 | Shopify | theme.liquid | [ver](Pixels/Pixel%201-All%20pages.html) |
 | Shopify | Customer Events | [ver](Pixels/Pixel%202%20Shopify-Customer%20events.js) |
