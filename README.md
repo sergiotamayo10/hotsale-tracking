@@ -55,29 +55,26 @@ var hotsaleKeywords = [
 
 # Modelo de Atribución — Hotsale Tracking Pixel:
 ATTRIBUTION MODEL — Hotsale Tracking 2026
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 MODELO: Last Non-Direct Click  |  CRÉDITO: 100% Hotsale  |  SPLIT: Ninguno
 
-─────────────────────────────────────────────────────
+
 VENTANA DE ATRIBUCIÓN
-─────────────────────────────────────────────────────
+──────────────────────
 Basada en sesión (localStorage)
 
   Usuario llega de Hotsale  →  compra  →  Hotsale lo lleva
   Usuario cierra y vuelve   →  compra  →  Hotsale NO lo lleva
 
-─────────────────────────────────────────────────────
+
 COBERTURA POR SEÑAL DE DETECCIÓN
-─────────────────────────────────────────────────────
 referrer+utm      ████████████████████  ~50%  (máxima confianza)
 referrer_only     ████████████░░░░░░░░  ~35%  (alta confianza)
 utm+no_foreign    ████░░░░░░░░░░░░░░░░  ~15%  (confianza media)
 sin señal         ░░░░░░░░░░░░░░░░░░░░   ~0%  → cupones únicamente
 
-─────────────────────────────────────────────────────
+
 LO QUE ESTE MODELO NO RECLAMA
-─────────────────────────────────────────────────────
 ✗  Conversiones asistidas   (vio Hotsale, volvió por Google)
 ✗  Influencia post-evento   (compró 3 días después)
 ✗  Split con campañas del ally
