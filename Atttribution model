@@ -1,20 +1,4 @@
-Modelo de Atribución: Last UTM Click — Session Scoped
-┌──────────────────────────────────────────────────────┐
-│  TIPO: Last Click — UTM Based — Session Scoped       │
-│                                                      │
-│  Ventana de atribución: duración del localStorage    │
-│  (persiste hasta que el usuario compra o cierra      │
-│   el navegador en modo incógnito)                    │
-│                                                      │
-│  Señal de atribución: keyword en cualquier UTM       │
-│  Keywords activas: hotsale · hot_sale · hot-sale     │
-│                    ccce                              │
-│                                                      │
-│  Campo de crédito: último clic que trajo al usuario  │
-│  al ally store con UTM de Hotsale                    │
-└──────────────────────────────────────────────────────┘
-
-FLUJO:
+Modelo de Atribución — Hotsale Tracking Pixel:
 ┌─────────────────────────────────────────────────────────────────┐
 │                    FUENTES DE TRÁFICO                           │
 │         Meta Ads · Google Ads · Email · Orgánico               │
@@ -23,29 +7,57 @@ FLUJO:
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                   HOTSALE.COM.CO                                │
-│              (punto de entrada del evento)                      │
+│              (punto de entrada obligatorio)                     │
+│         Todo el tráfico hacia aliados pasa por aquí            │
 └──────────────────────┬──────────────────────────────────────────┘
-                       │ redirect con UTMs preservados
+                       │ redirect → referrer = hotsale.com.co
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    ALLY STORE                                   │
-│         nike.com.co · falabella.com · alkosto.com · etc        │
 │                                                                 │
 │   TAG 1 — theme.liquid / GTM All Pages                         │
 │   ┌─────────────────────────────────────────────────────┐      │
-│   │ Detecta UTM con keyword Hotsale                     │      │
-│   │ Guarda en localStorage:                             │      │
+│   │                                                     │      │
+│   │   CONDITION B (primary)                             │      │
+│   │   referrer === hotsale.com.co?                      │      │
+│   │          │                                          │      │
+│   │          ├── YES → DETECTED ✅                      │      │
+│   │          │         detection_signal: referrer_only  │      │
+│   │          │         or referrer+utm                  │      │
+│   │          │                                          │      │
+│   │          └── NO (referrer dropped)                  │      │
+│   │                    │                                │      │
+│   │               CONDITION A                           │      │
+│   │               UTM contains Hotsale keyword?         │      │
+│   │                    │                                │      │
+│   │                    ├── NO  → NOT DETECTED ❌        │      │
+│   │                    │                                │      │
+│   │                    └── YES                          │      │
+│   │                          │                          │      │
+│   │                     CONDITION C                     │      │
+│   │                     Foreign keyword in              │      │
+│   │                     source/medium?                  │      │
+│   │                          │                          │      │
+│   │                          ├── YES → NOT DETECTED ❌  │      │
+│   │                          │        (ally's own       │      │
+│   │                          │         campaign)        │      │
+│   │                          │                          │      │
+│   │                          └── NO  → DETECTED ✅      │      │
+│   │                                   detection_signal: │      │
+│   │                                   utm+no_foreign    │      │
+│   │                                                     │      │
+│   │   Stores in localStorage + sessionStorage:          │      │
 │   │   utm_source · utm_medium · utm_campaign            │      │
-│   │   store_domain · landed_at                          │      │
+│   │   store_domain · referrer · detection_signal        │      │
+│   │   landed_at                                         │      │
 │   └─────────────────────────────────────────────────────┘      │
 │                       │                                         │
 │                       │ usuario navega y compra                 │
 │                       ▼                                         │
 │   TAG 2 — Customer Events / GTM Thank You Page                 │
 │   ┌─────────────────────────────────────────────────────┐      │
-│   │ Lee localStorage → valida keyword                   │      │
-│   │ Toma order_id · order_value · currency              │      │
-│   │ Fallback → event.context si localStorage vacío      │      │
+│   │ Reads localStorage → validates hsData exists        │      │
+│   │ Reads order_id · order_value from dataLayer          │      │
 │   └─────────────────────────────────────────────────────┘      │
 └──────────────────────┬──────────────────────────────────────────┘
                        │ conversión confirmada
@@ -58,22 +70,45 @@ FLUJO:
 │  │  (Apps Script)  │ │  (Hotsale)   │ │     (Hotsale)       │  │
 │  │                 │ │              │ │                     │  │
 │  │ • Fecha         │ │ • purchase   │ │ • Purchase event    │  │
-│  │ • store_domain  │ │ • order_id   │ │ • value             │  │
-│  │ • utm_source    │ │ • value      │ │ • currency          │  │
-│  │ • utm_medium    │ │ • currency   │ │ • store_domain      │  │
-│  │ • utm_campaign  │ │ • utm_source │ │ • utm_source        │  │
-│  │ • order_id      │ │ • utm_medium │ │ • utm_campaign      │  │
-│  │ • order_value   │ │ • campaign   │ │                     │  │
-│  │ • currency      │ │ • domain     │ │                     │  │
+│  │ • store_domain  │ │ • order_id   │ │ • value · currency  │  │
+│  │ • detection_    │ │ • value      │ │ • store_domain      │  │
+│  │   signal        │ │ • currency   │ │ • utm_source        │  │
+│  │ • utm_source    │ │ • utm_source │ │ • utm_campaign      │  │
+│  │ • utm_medium    │ │ • utm_medium │ │                     │  │
+│  │ • utm_campaign  │ │ • campaign   │ │                     │  │
+│  │ • referrer      │ │ • domain     │ │                     │  │
+│  │ • order_id      │ │ • det_signal │ │                     │  │
+│  │ • order_value   │ │              │ │                     │  │
+│  │ • converted_at  │ │              │ │                     │  │
 │  └────────┬────────┘ └──────┬───────┘ └──────────┬──────────┘  │
 └───────────┼─────────────────┼────────────────────┼─────────────┘
-            │                 │                    │
             ▼                 ▼                    ▼
-     Siempre llega      Llega si GA4         Llega si Meta
-     sin depender       no está              no está
-     de nada externo    bloqueado            bloqueado
-     (zero infra)
+     Siempre llega      Llega si no          Llega si no
+     zero infra         bloqueado            bloqueado
+     dependence         por CSP/WAF          por iOS/adblock
 
+
+Señal de atribución:
+┌──────────────────────────────────────────────────────────────┐
+│  TIPO: Last Touch — Session Scoped — Multi-Signal            │
+│                                                              │
+│  Señales en orden de prioridad:                              │
+│                                                              │
+│  1. REFERRER (B) — strongest                                 │
+│     Prueba física de paso por hotsale.com.co                 │
+│     Confiabilidad: ~100% cuando está presente               │
+│     Frecuencia: ~65% de sesiones                             │
+│                                                              │
+│  2. UTM + NO FOREIGN (A AND C) — fallback                    │
+│     Keyword Hotsale en UTM + ausencia de señales del aliado  │
+│     Confiabilidad: ~85% cuando está presente                 │
+│     Frecuencia: ~20% adicional de sesiones                   │
+│                                                              │
+│  Gate: B OR (A AND C)                                        │
+│                                                              │
+│  Ventana de atribución: duración del localStorage            │
+│  (persiste hasta compra o cierre de navegador incógnito)     │
+└──────────────────────────────────────────────────────────────┘
 
 LIMITACIONES:
 ✅ CAPTURA
@@ -96,4 +131,3 @@ Jerarquía de Confiabilidad por Destino
 SHEET (Apps Script)     ████████████████████  ~85% de conversiones reales
 GA4                     ███████████████░░░░░  ~75% (bloqueado en algunos enterprise)
 Meta Pixel              ████████████░░░░░░░░  ~60% (ad blockers + CSP + iOS)
-Cupón (offline)         ████████████████████  100% — no depende de código
