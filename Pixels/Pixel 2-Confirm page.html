@@ -1,0 +1,124 @@
+// 2do PIXEL: Se debe disparar solo en la página de confirmación de compra (Si tienes Shopify escríbenos y te enviamos el tutorial)
+<!-- Hotsale Conversion Pixel -->
+<script>
+(function() {
+  // ── CONFIG ─────────────────────────────────────────────────────
+  var GA4_ID          = 'G-CD4K6VN4YV';
+  var META_PIXEL_ID   = '8614226731956808';
+  var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydRbTiMXNk8_yzuVMPcyMMlDv1_XG4zt5CO9tJPMqgIDMjRrg_gfp2o5Br4S3W-gGc/exec';
+
+  // 1. RECOVER SESSION
+  var hsData = null;
+  try {
+    var raw = sessionStorage.getItem('hotsale_data') || localStorage.getItem('hotsale_data');
+    if (raw) hsData = JSON.parse(raw);
+  } catch(e) {}
+  if (!hsData) return;
+
+  // 2. EXTRACT ORDER
+  var orderValue = 0;
+  var orderId    = 'unknown';
+  if (window.dataLayer) {
+    for (var i = 0; i < window.dataLayer.length; i++) {
+      var d = window.dataLayer[i];
+      if (d.ecommerce && d.ecommerce.transaction_id) {
+        orderId    = d.ecommerce.transaction_id;
+        orderValue = parseFloat(d.ecommerce.value) || 0;
+        break;
+      }
+      if (d.transactionId) {
+        orderId    = d.transactionId;
+        orderValue = parseFloat(d.transactionTotal) || 0;
+        break;
+      }
+      if (d.event === 'purchase' && d.value) {
+        orderId    = d.transaction_id || orderId;
+        orderValue = parseFloat(d.value) || 0;
+        break;
+      }
+    }
+  }
+
+  // 3. APPS SCRIPT → GOOGLE SHEET
+  try {
+    var payload = JSON.stringify({
+      store_domain: window.location.hostname,
+      utm_source:   hsData.utm_source   || '',
+      utm_medium:   hsData.utm_medium   || '',
+      utm_campaign: hsData.utm_campaign || '',
+      utm_content:  hsData.utm_content  || '',
+      utm_term:     hsData.utm_term     || '',
+      utm_id:       hsData.utm_id       || '',
+      order_id:     orderId,
+      order_value:  orderValue
+    });
+    if (window.fetch) {
+      fetch(APPS_SCRIPT_URL, { method: 'POST', body: payload, keepalive: true, mode: 'no-cors' });
+    } else {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', APPS_SCRIPT_URL, true);
+      xhr.send(payload);
+    }
+  } catch(e) {}
+
+  // 4. GA4
+  try {
+    window.dataLayer = window.dataLayer || [];
+    if (!window.gtag) {
+      window.gtag = function() { window.dataLayer.push(arguments); };
+      var gScript = document.createElement('script');
+      gScript.async = true;
+      gScript.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4_ID;
+      document.head.appendChild(gScript);
+      window.gtag('js', new Date());
+    }
+    window.gtag('config', GA4_ID, { send_page_view: false });
+    window.gtag('event', 'purchase', {
+      send_to:        GA4_ID,
+      transaction_id: orderId,
+      value:          orderValue,
+      currency:       'COP',
+      utm_source:     hsData.utm_source   || '',
+      utm_medium:     hsData.utm_medium   || '',
+      utm_campaign:   hsData.utm_campaign || '',
+      utm_content:    hsData.utm_content  || '',
+      utm_term:       hsData.utm_term     || '',
+      utm_id:         hsData.utm_id       || ''
+    });
+  } catch(e) {}
+
+  // 5. META PIXEL
+  try {
+    if (!window.fbq) {
+      !function(f,b,e,v,n,t,s){
+        if(f.fbq)return;
+        n=f.fbq=function(){ n.callMethod ? n.callMethod.apply(n,arguments) : n.queue.push(arguments); };
+        if(!f._fbq) f._fbq=n;
+        n.push=n; n.loaded=!0; n.version='2.0'; n.queue=[];
+        t=b.createElement(e); t.async=!0; t.src=v;
+        s=b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t,s);
+      }(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    }
+    fbq('init', META_PIXEL_ID);
+    fbq('track', 'Purchase', {
+      value:        orderValue,
+      currency:     'COP',
+      content_type: 'product',
+      order_id:     orderId,
+      utm_source:   hsData.utm_source   || '',
+      utm_medium:   hsData.utm_medium   || '',
+      utm_campaign: hsData.utm_campaign || '',
+      utm_content:  hsData.utm_content  || '',
+      utm_term:     hsData.utm_term     || '',
+      utm_id:       hsData.utm_id       || ''
+    });
+  } catch(e) {}
+
+  // 6. CLEANUP
+  try {
+    localStorage.removeItem('hotsale_data');
+    sessionStorage.removeItem('hotsale_data');
+  } catch(e) {}
+})();
+</script>
+<!-- End Hotsale conversion Pixel -->
