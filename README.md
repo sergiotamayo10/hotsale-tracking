@@ -27,10 +27,11 @@ Campaña Hotsale → Usuario llega al aliado con UTM
 
 | Plataforma | Place | Pixel |
 |---|---|---|
-| Shopify | theme.liquid | [ver](Pixels/Pixel%201-All%20pages.html) |
+| Shopify | theme.liquid | [ver](Pixels/Pixel%201-All%20pages.html) | 
 | Shopify | Customer Events | [ver](Pixels/Pixel%202%20Shopify-Customer%20events.js) |
 | VTEX / Otros / GTM | All Pages | [ver](Pixels/Pixel%201-All%20pages.html) |
 | VTEX / Otros / GTM | Confirmation page | [ver](Pixels/Pixel%202%20GTM%20-Confirm%20page.html) |
+Ver videos tutoriales de instalación: https://foxly.link/tutoriales_pixels_hotsale
 
 ### Keywords de detección activas
 ```javascript
