@@ -2,6 +2,7 @@
 
 Sistema de tracking de conversiones cross-domain para el evento Hotsale Colombia.
 Captura compras realizadas en sitios de aliados atribuidas a tráfico de Hotsale.
+### Ver videos tutoriales de instalación: https://foxly.link/tutoriales_pixels_hotsale
 
 ## ¿Cómo funciona?
 ```
